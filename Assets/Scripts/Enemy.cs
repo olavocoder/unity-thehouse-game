@@ -9,15 +9,16 @@ public class Enemy : MonoBehaviour
     private NavMeshAgent agent;
     private Boolean isCollide = false;
     private Animator animator;
+    private HealthSystemForDummies playerHealth;
 
     void FinishAnimation(){
-        HealthSystemForDummies playerHealth = player.GetComponent<HealthSystemForDummies>();
 		playerHealth.AddToCurrentHealth(-100);			
     }
 
     // Start is called before the first frame update
     void Start()
     {
+        playerHealth = player.GetComponent<HealthSystemForDummies>();
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
     }
@@ -25,11 +26,12 @@ public class Enemy : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        agent.SetDestination(player.transform.position);
+        if(!animator.GetBool("isDead")){
+            agent.SetDestination(player.transform.position);
+        }
         
         bool isPlayer = agent.remainingDistance <= agent.stoppingDistance;
         animator.SetBool("isWalk", !isPlayer);
-        animator.SetBool("isPlayer", isPlayer);
-        
+        animator.SetBool("isPlayer", isPlayer && playerHealth.IsAlive);
     }
 }
