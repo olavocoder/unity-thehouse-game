@@ -7,17 +7,18 @@ using UnityEngine;
 public class GetACar : MonoBehaviour
 {
     // Start is called before the first frame update
-    private PlayerMovementScript playerMovementScript;
-    private MouseLookScript mouseLookScript;
-    private GunInventory gunInventory;
+    //private PlayerMovementScript playerMovementScript;
+    //private MouseLookScript mouseLookScript;
+    //private GunInventory gunInventory;
     public GameObject cameraCar;
+    private Movements movements;
     
     void Start()
     {
         // Pega scripts do personagem quando o código inicia
-        playerMovementScript = GetComponent<PlayerMovementScript>();
-        mouseLookScript = GetComponent<MouseLookScript>();
-        gunInventory = GetComponent<GunInventory>();
+        movements = GetComponent<Movements>();
+        //mouseLookScript = GetComponent<MouseLookScript>();
+        //gunInventory = GetComponent<GunInventory>();
 
     }
 
@@ -36,9 +37,9 @@ public class GetACar : MonoBehaviour
 
         if(match.Success){
             // Desativa scripts de controle do personagem
-            playerMovementScript.enabled = false;
-            mouseLookScript.enabled = false;
-            gunInventory.enabled = false;
+            //playerMovementScript.enabled = false;
+            //mouseLookScript.enabled = false;
+            //gunInventory.enabled = false;
 
             // Ativa camera do carro
             cameraCar.SetActive(true);

@@ -21,22 +21,22 @@ public class CarPlayer : MonoBehaviour
             cameraCar.SetActive(false);
             player.SetActive(true);
             // Filtra qualquer objeto atrelado ao personagem para desativar
-            GameObject[] guns = GameObject.FindGameObjectsWithTag("Weapon");
-            foreach(GameObject gun in guns){
-                Debug.Log("Entrou aqui");
-                gun.SetActive(true);
-                //gun.transform.position = gameObject.transform.position + new Vector3(2,1,2);
-            }
+            // GameObject[] guns = GameObject.FindGameObjectsWithTag("Weapon");
+            // foreach(GameObject gun in guns){
+            //     Debug.Log("Entrou aqui");
+            //     gun.SetActive(true);
+            //     //gun.transform.position = gameObject.transform.position + new Vector3(2,1,2);
+            // }
 
             player.transform.position = gameObject.transform.position + new Vector3(2,1,2);
-            PlayerMovementScript playerMovementScript = player.GetComponent<PlayerMovementScript>();
-            MouseLookScript mouseLookScript = player.GetComponent<MouseLookScript>();
-            GunInventory gunInventory = player.GetComponent<GunInventory>();
+            // PlayerMovementScript playerMovementScript = player.GetComponent<PlayerMovementScript>();
+            // MouseLookScript mouseLookScript = player.GetComponent<MouseLookScript>();
+            // GunInventory gunInventory = player.GetComponent<GunInventory>();
 
             // Desativa scripts de controle do personagem
-            playerMovementScript.enabled = true;
-            mouseLookScript.enabled = true;
-            gunInventory.enabled = true;
+            // playerMovementScript.enabled = true;
+            // mouseLookScript.enabled = true;
+            // gunInventory.enabled = true;
             carController.enabled = false;
         }
     }
