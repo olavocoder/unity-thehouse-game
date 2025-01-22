@@ -63,3 +63,5 @@ sysinfo.txt
 
 # IDE specific folders (e.g., JetBrains Rider)
 .idea/
+
+/theHouseWebBuilder
