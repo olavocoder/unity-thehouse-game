@@ -49,7 +49,7 @@ sysinfo.txt
 
 # TextMesh Pro
 /[Aa]ssets/TextMesh Pro/
-
+/WebGLTemplates/
 # Build artifacts
 *.apk
 *.aab
