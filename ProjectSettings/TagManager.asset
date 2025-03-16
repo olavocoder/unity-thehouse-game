@@ -5,11 +5,12 @@ TagManager:
   serializedVersion: 2
   tags:
   - Terrain
+  - ColliderBrush
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - IgnoreBrush
   - Water
   - UI
   - 

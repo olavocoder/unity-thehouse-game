@@ -1,4 +1,6 @@
 using UnityEngine;
+using System;
+using System.Text.RegularExpressions;
 
 public class RuntimeTerrainPainter : MonoBehaviour
 {
@@ -16,11 +18,12 @@ public class RuntimeTerrainPainter : MonoBehaviour
     public int selectedTextureIndex = 0; // Índice da textura ativa no Terrain Layer
     public GameObject objectPrefab; // Objeto a ser instanciado
     public bool placeObjects = false; // Ativar/Desativar colocação de objetos
+    private bool isEnabledBrush = false;
+    public float maxDistance = 5.0f;
 
-    void Start()
-    {
+    void Start(){
         if (!Application.isPlaying) return; 
-
+    
         if (terrain == null) terrain = Terrain.activeTerrain;
 
         TerrainData terrainData = terrain.terrainData;
@@ -37,96 +40,77 @@ public class RuntimeTerrainPainter : MonoBehaviour
         }
     }
 
-    void Update()
-    {
+    void Update(){
         if (!Application.isPlaying) return;
 
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit))
-        {
-            if (hit.collider.CompareTag("Terrain"))
-            {
+        if(Input.GetKeyDown("x")) isEnabledBrush = !isEnabledBrush; // Ativar/Desativar o brush
+
+        if (Physics.Raycast(ray, out hit) && isEnabledBrush){
+            if (hit.collider.CompareTag("Terrain") ){
                 // Ajustar tamanho do brush visual corretamente
                 float adjustedBrushSize = (brushSize / terrain.terrainData.heightmapResolution) * terrain.terrainData.size.x;
+                
+                if(SphereCollisor() == true){
+                    ChangeChildrenmaterials(Color.red, brushIndicator);
+                }else{
+                    ChangeChildrenmaterials(Color.blue, brushIndicator);
+                }
 
                 // Atualiza a posição do brush visual
                 brushIndicator.SetActive(true);
                 brushIndicator.transform.position = new Vector3(hit.point.x, hit.point.y + 0.1f, hit.point.z);
                 brushIndicator.transform.localScale = new Vector3(adjustedBrushSize * 0.1f, 1, adjustedBrushSize * 0.1f);
-                
-                // Aplica a modificação quando o botão do mouse é pressionado
-                if (Input.GetMouseButton(0) || Input.GetMouseButton(1)){
-                    ApplyBrush(hit.point, Input.GetMouseButton(0));
-                }
-                
-                if (Input.GetMouseButton(2)) {
-                    ApplyTextureBrush(hit.point); // Pintar textura
-                }
 
                 // 🛠️ Adiciona um objeto ao clicar com o botão direito do mouse
-                if (placeObjects && Input.GetKey("z") && objectPrefab != null)
+                if (SphereCollisor() == false && placeObjects && Input.GetKeyDown("z") && objectPrefab != null)
                 {
-                    Instantiate(objectPrefab, hit.point, Quaternion.identity);
+                    ApplyBrush(hit.point, Input.GetMouseButton(0));
+                    ApplyBrush(hit.point, Input.GetMouseButton(0), "texture"); // Pintar textura
+                    Instantiate(objectPrefab, hit.point, brushIndicator.transform.rotation);
+                    isEnabledBrush = false;
+                }
+
+                if(Input.GetKeyDown("c")){
+                    brushIndicator.transform.Rotate(0,90,0);
                 }
 
             }
-        }
-        else
-        {
+
+        }else{
             brushIndicator.SetActive(false);
         }
     }
 
-void ApplyTextureBrush(Vector3 worldPoint)
-{
-    TerrainData terrainData = terrain.terrainData;
-    Vector3 terrainPos = terrain.transform.position;
+    bool SphereCollisor(){
+        Collider[] hits = Physics.OverlapSphere(brushIndicator.transform.position, maxDistance);
+        string pattern = @"House_Green_Prefab";
 
-    int alphamapWidth = terrainData.alphamapWidth;
-    int alphamapHeight = terrainData.alphamapHeight;
-
-    float relativeX = (worldPoint.x - terrainPos.x) / terrainData.size.x;
-    float relativeZ = (worldPoint.z - terrainPos.z) / terrainData.size.z;
-    int x = Mathf.RoundToInt(relativeX * alphamapWidth);
-    int z = Mathf.RoundToInt(relativeZ * alphamapHeight);
-
-    int brushSizeInPixels = Mathf.RoundToInt(brushSize * alphamapWidth / terrainData.size.x);
-
-    int xStart = Mathf.Clamp(x - brushSizeInPixels / 2, 0, alphamapWidth - brushSizeInPixels);
-    int zStart = Mathf.Clamp(z - brushSizeInPixels / 2, 0, alphamapHeight - brushSizeInPixels);
-
-    int width = Mathf.Clamp(brushSizeInPixels, 1, alphamapWidth - xStart);
-    int height = Mathf.Clamp(brushSizeInPixels, 1, alphamapHeight - zStart);
-
-    float[,,] splatmap = terrainData.GetAlphamaps(xStart, zStart, width, height);
-    int numTextures = splatmap.GetLength(2); // Número de texturas do terreno
-
-    for (int i = 0; i < width; i++)
-    {
-        for (int j = 0; j < height; j++)
+        foreach (Collider hit in hits)
         {
-            float brushValue = brushTexture.GetPixelBilinear(i / (float)width, j / (float)height).a;
-
-            for (int t = 0; t < numTextures; t++)
-            {
-                splatmap[i, j, t] = (t == selectedTextureIndex) ? brushValue : (splatmap[i, j, t] * (1 - brushValue));
+            if(Regex.IsMatch(hit.gameObject.name, pattern)){
+                return true;
             }
+        }
+
+        return false;
+    }
+
+    void ChangeChildrenmaterials(Color colorValue, GameObject itemObj){
+        foreach(Renderer rend in itemObj.GetComponentsInChildren<Renderer>()){
+            rend.material = new Material(rend.material);
+            rend.material.color = colorValue;
         }
     }
 
-    terrainData.SetAlphamaps(xStart, zStart, splatmap);
-}
-
-
-    void ApplyBrush(Vector3 worldPoint, bool raise)
-    {
+    void ApplyBrush(Vector3 worldPoint, bool raise, string type = "height"){
         TerrainData terrainData = terrain.terrainData;
         Vector3 terrainPos = terrain.transform.position;
 
-        int heightmapWidth = terrainData.heightmapResolution;
-        int heightmapHeight = terrainData.heightmapResolution;
+        int heightmapWidth = type == "height" ? terrainData.heightmapResolution : terrainData.alphamapWidth;
+        int heightmapHeight = type == "height"  ? terrainData.heightmapResolution : terrainData.alphamapHeight;
 
         float relativeX = (worldPoint.x - terrainPos.x) / terrainData.size.x;
         float relativeZ = (worldPoint.z - terrainPos.z) / terrainData.size.z;
@@ -143,17 +127,47 @@ void ApplyTextureBrush(Vector3 worldPoint)
 
         float[,] heights = terrainData.GetHeights(xStart, zStart, width, height);
 
-        for (int i = 0; i < width; i++)
-        {
-            for (int j = 0; j < height; j++)
-            {
+        float[,,] splatmap = new float[0, 0, 0];
+        int numTextures = 0;
+
+        if(type == "texture"){
+            splatmap = terrainData.GetAlphamaps(xStart, zStart, width, height);
+            numTextures = splatmap.GetLength(2); // Número de texturas do terreno
+        }
+
+        for (int i = 0; i < width; i++){
+            for (int j = 0; j < height; j++){
                 float brushValue = brushTexture.GetPixelBilinear(i / (float)width, j / (float)height).a;
-                float heightChange = brushValue * (raise ? brushStrength : -brushStrength);
-                heights[i, j] = Mathf.Clamp(heights[i, j] + heightChange, minHeight, maxHeight);
+                
+                if(type == "height"){
+                    float heightChange = brushValue * (raise ? brushStrength : -brushStrength);
+                    heights[i, j] = Mathf.Clamp(heights[i, j] + heightChange, minHeight, maxHeight);
+                }
+
+                if(type == "texture"){
+                    for (int t = 0; t < numTextures; t++){
+                        splatmap[i, j, t] = (t == selectedTextureIndex) ? brushValue : (splatmap[i, j, t] * (1 - brushValue));
+                    }
+                }
+
             }
         }
 
-        terrainData.SetHeights(xStart, zStart, heights);
+        if(type == "height"){
+            terrainData.SetHeights(xStart, zStart, heights);
+        }else{ 
+            terrainData.SetAlphamaps(xStart, zStart, splatmap);
+        }
+    }
+    void OnDrawGizmos()
+    {
+        if (brushIndicator == null) return; // Evita erro se o objeto não estiver definido
+
+        // Define a cor do gizmo (verde para visibilidade)
+        Gizmos.color = Color.green;
+
+        // Desenha uma esfera na posição do objeto com o raio do OverlapSphere
+        Gizmos.DrawWireSphere(brushIndicator.transform.position, maxDistance); // Altere o raio conforme necessário
     }
 
     void OnApplicationQuit()

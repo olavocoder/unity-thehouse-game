@@ -19,9 +19,9 @@ public class Movements : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
- // Captura os eixos de entrada
+        // Captura os eixos de entrada
         float horizontal = Input.GetAxis("Horizontal"); // A/D para rotação
         float vertical = Input.GetAxis("Vertical");     // W/S para movimento
         float verticalRounded = Mathf.RoundToInt(vertical);
